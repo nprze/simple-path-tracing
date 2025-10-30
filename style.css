@@ -1,0 +1,14 @@
+html,body { height:100%; margin:0; display:flex; }
+.notice { position:fixed; top:8px; left:8px; padding:.4rem .6rem; background:rgba(0,0,0,.6); color:white; border-radius:6px; font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial; font-size:13px }
+
+#path-tracing-canvas {
+    width: 100%; 
+    height: 100%;
+    position:fixed;
+    right: 0;
+    bottom: 0;
+}
+#rasterizer-canvas { 
+    width: 100%; 
+    height: 100%;
+}
