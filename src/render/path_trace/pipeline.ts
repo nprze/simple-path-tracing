@@ -3,9 +3,10 @@ async function fetchFileAsString(url: string): Promise<string> {
   return await response.text();
 }
 
-export async function createComputePipeline(device:GPUDevice, shaderPath:string, circleCount:number=1):Promise<GPUComputePipeline>{
+export async function createComputePipeline(device:GPUDevice, shaderPath:string, circleCount:number=1, planeCount:number=1):Promise<GPUComputePipeline>{
   const computeShader: string = await fetchFileAsString(shaderPath);
-  const shaderFirstLine: string = "const circles_num = " +circleCount+";";
+  let shaderFirstLine: string = "const circles_num = " +circleCount+";";
+  shaderFirstLine += "\nconst planes_num = " +planeCount+";";
   const computeModule = device.createShaderModule({ code: shaderFirstLine+computeShader });
   const bindGroupLayout = device.createBindGroupLayout({
     entries: [

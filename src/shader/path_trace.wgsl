@@ -7,6 +7,7 @@ struct Input {
     camera_orientation: vec3<f32>,
     camera_up: vec3<f32>,
     circles: array<vec4<f32>, circles_num> // circle xyz are coords, w is radius
+    planes: array<vec4<f32>, planes_num> // plane xyz is normal, w is offset from 0
 };
 
 struct Hit {
@@ -69,6 +70,24 @@ fn hit_circle(base_position:vec3<f32>, circle:vec4<f32>, ray_dir:vec3<f32>)->Hit
     return hit;
 }
 
+fn hit_plane(base_position:vec3<f32>, plane:vec4<f32>, ray_dir:vec3<f32>)->Hit {
+    const f32 final_plane_offset = plane.w + dot(base_position, plane.xyz);
+    const vec3<f32> plane_vec3 = plane.xyz * final_plane_offset;
+    const f32 hit_checker = (dot(plane_vec3, ray_dir))/final_plane_offset;
+    var hit: Hit;
+    if (hit_checker>0){
+        // Hit
+        hit.did_hit = true;
+        hit.hit_pos = ix;
+        hit.normal = plane.xyz;
+        return hit;
+    }
+    hit.did_hit = true;
+    return hit;
+    
+
+}
+
 fn trace_ray(base_position: vec3<f32>, ray_dir: vec3<f32>) -> vec3<f32> {
     var current_pos = base_position;
     var current_dir = ray_dir;
@@ -97,13 +116,13 @@ fn trace_ray(base_position: vec3<f32>, ray_dir: vec3<f32>) -> vec3<f32> {
         }
 
         if (!smallest_hit.did_hit) {
-            accumulated_color = accumulated_color + multiplier * vec3<f32>(0., 0., 0.); 
+            accumulated_color = accumulated_color + multiplier * vec3<f32>(ray_dir.y * -0.5 + 0.5, ray_dir.y * -0.5 + 0.5, 1.0); 
             break;
         }
 
-        var circle_color = smallest_hit.normal;
+        var circle_color = vec3<f32>(0.0,0.0,1.0);
         if (corcle_num % 2 == 0){
-            circle_color =  smallest_hit.normal;
+            circle_color = vec3<f32>(1.0,0.0,0.0);
         }
         accumulated_color = accumulated_color + circle_color * multiplier;
 
@@ -130,6 +149,8 @@ fn main(
     
     
     color = trace_ray(input.camera_position, ray_dir);
+
+    //color = vec3<f32>(ray_dir.y * -0.5 + 0.5, ray_dir.y * -0.5 + 0.5, 1.0);
 
     textureStore(outputTex, vec2<i32>(id.xy), vec4<f32>(color, 1.0));
 }
