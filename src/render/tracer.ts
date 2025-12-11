@@ -1,32 +1,30 @@
-import phyobj from "./objects";
+import objs from "./objects";
 import { canvasPresenter } from "./path_trace/canvas_present";
 import { pathTracer } from "./path_trace/path_tracing"
 
 // a singleton to hold the data :3
-class physim {
-    private static instance: physim;
-    static get(): physim { return physim.instance; }
+class tracer {
+    private static instance: tracer;
+    static get(): tracer { return tracer.instance; }
     
     static async create() {
         const pathTracingCanvas = document.getElementById("path-tracing-canvas") as HTMLCanvasElement;
-        const rasterizeCanvas = document.getElementById("rasterizer-canvas") as HTMLCanvasElement;
         const adapter = await navigator.gpu.requestAdapter();
         if (!adapter) throw new Error("WebGPU not supported");
         const device = await adapter.requestDevice();
         const context = pathTracingCanvas.getContext("webgpu") as GPUCanvasContext;
-        const rasterizer_context = rasterizeCanvas.getContext("webgpu") as GPUCanvasContext;
 
         const format = navigator.gpu.getPreferredCanvasFormat();
         context.configure({ device, format, alphaMode: "opaque" });
 
-        phyobj.create();
+        tracer.instance = new tracer(device, context, pathTracingCanvas, format); 
 
-        physim.instance = new physim(device, context, pathTracingCanvas, format); 
-
-        await physim.get().init();
+        objs.create();
+        
+        await tracer.get().init();
     }
     constructor(device:GPUDevice, webgpuContext:GPUCanvasContext, canvas: HTMLCanvasElement, format: GPUTextureFormat) {
-        physim.instance = this;
+        tracer.instance = this;
 
         this.device = device;
         this.webgpuContext = webgpuContext;
@@ -49,7 +47,7 @@ class physim {
         this.frameNum = 0;
     }
     async init(){
-        await this.path.initPathtracer(phyobj.get().circles.length);
+        await this.path.initPathtracer(objs.get().circles.length, objs.get().planes.length);
         await this.present.initCanvasPresenter();
     }
 
@@ -65,7 +63,7 @@ class physim {
     }
     run(){
         async function loop() {
-            await physim.get().frame();
+            await tracer.get().frame();
             requestAnimationFrame(loop);
         }
         loop();
@@ -89,4 +87,4 @@ class physim {
     frameNum: number;
 }
 
-export default physim;
+export default tracer;

@@ -4,9 +4,9 @@ struct Input {
     one_over_texture_width: f32,
     one_over_texture_height: f32,
     camera_position: vec3<f32>,
-    camera_orientation: vec3<f32>,
-    camera_up: vec3<f32>,
-    circles: array<vec4<f32>, circles_num> // circle xyz are coords, w is radius
+    camera_direction: vec3<f32>,
+    camera_perpendicular: vec3<f32>,
+    circles: array<vec4<f32>, circles_num>, // circle xyz are coords, w is radius
     planes: array<vec4<f32>, planes_num> // plane xyz is normal, w is offset from 0
 };
 
@@ -35,15 +35,6 @@ fn hit_circle(base_position:vec3<f32>, circle:vec4<f32>, ray_dir:vec3<f32>)->Hit
         return hit;
     }
     let delta_squared = sqrt(delta);
-    // let x1 = (-b - delta_squared) * 0.5;
-    // let x2 = (-b + delta_squared) * 0.5;
-    // let smaller = select(x2, x1, x1<x2);
-    // let i = base_position + (ray_dir * smaller);
-    // var hit : Hit;
-    // hit.did_hit = true;
-    // hit.hit_pos = i;
-    // hit.normal = normalize(i - circle.xyz);
-    // return hit;
     let t1 = (-b - delta_squared) * 0.5;
     let t2 = (-b + delta_squared) * 0.5;
 
@@ -65,27 +56,25 @@ fn hit_circle(base_position:vec3<f32>, circle:vec4<f32>, ray_dir:vec3<f32>)->Hit
     let i = base_position + (ray_dir * t);
     var hit: Hit;
     hit.did_hit = true;
+    hit.color = vec3<f32>(0.0, 0.5, 0.5);
     hit.hit_pos = i;
     hit.normal = normalize(i - circle.xyz);
     return hit;
 }
 
 fn hit_plane(base_position:vec3<f32>, plane:vec4<f32>, ray_dir:vec3<f32>)->Hit {
-    const f32 final_plane_offset = plane.w + dot(base_position, plane.xyz);
-    const vec3<f32> plane_vec3 = plane.xyz * final_plane_offset;
-    const f32 hit_checker = (dot(plane_vec3, ray_dir))/final_plane_offset;
-    var hit: Hit;
-    if (hit_checker>0){
-        // Hit
+    var hit:Hit;
+    let w = (dot(base_position, plane.xyz) + plane.w) / (dot(ray_dir, -plane.xyz));
+    if (w>0){
+        // hit
         hit.did_hit = true;
-        hit.hit_pos = ix;
         hit.normal = plane.xyz;
-        return hit;
+        hit.color = vec3<f32>(0.15,0.4,0.025);
+        hit.hit_pos = base_position + (w*ray_dir);
+        return hit;    
     }
-    hit.did_hit = true;
+    hit.did_hit = false;
     return hit;
-    
-
 }
 
 fn trace_ray(base_position: vec3<f32>, ray_dir: vec3<f32>) -> vec3<f32> {
@@ -113,18 +102,18 @@ fn trace_ray(base_position: vec3<f32>, ray_dir: vec3<f32>) -> vec3<f32> {
                 smallest_hit = hit;
                 corcle_num = i;
             }
+            let hitPlane: Hit = hit_plane(current_pos, input.planes[i], current_dir);
+            if (hitPlane.did_hit && (length(current_pos - smallest_hit.hit_pos) > length(current_pos - hitPlane.hit_pos))) {
+                smallest_hit = hitPlane;
+                corcle_num = -1;
+            }
         }
 
         if (!smallest_hit.did_hit) {
             accumulated_color = accumulated_color + multiplier * vec3<f32>(ray_dir.y * -0.5 + 0.5, ray_dir.y * -0.5 + 0.5, 1.0); 
             break;
         }
-
-        var circle_color = vec3<f32>(0.0,0.0,1.0);
-        if (corcle_num % 2 == 0){
-            circle_color = vec3<f32>(1.0,0.0,0.0);
-        }
-        accumulated_color = accumulated_color + circle_color * multiplier;
+        accumulated_color = accumulated_color + smallest_hit.color * multiplier;
 
         // reflect 
         let normal = smallest_hit.normal;
@@ -142,15 +131,19 @@ fn main(
 ) {
     let nx = (((f32(id.x) + 0.5) * input.one_over_texture_width) * 2.0 - 1.0) * input.aspect_ratio;
     let ny = (((f32(id.y) + 0.5) * input.one_over_texture_height)) * 2.0 - 1.0;
-    let ray_dir = normalize(vec3<f32>(nx, ny, input.plane_dist));
 
+    // calculate ray direction
+    let dir = input.camera_direction;//vec3<f32>(0,0,1);
+    let right_left = input.camera_perpendicular;
+    let top_bottom = -normalize(cross(dir, right_left));
+
+    let ray_dir = normalize(vec3<f32>((dir * input.plane_dist)+(right_left *nx)+(top_bottom*ny)));
+
+    //let ray_dir = normalize(vec3<f32>(nx, ny, input.plane_dist));
 
     var color :vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
     
-    
     color = trace_ray(input.camera_position, ray_dir);
-
-    //color = vec3<f32>(ray_dir.y * -0.5 + 0.5, ray_dir.y * -0.5 + 0.5, 1.0);
 
     textureStore(outputTex, vec2<i32>(id.xy), vec4<f32>(color, 1.0));
 }

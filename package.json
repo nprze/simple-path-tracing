@@ -13,5 +13,8 @@
     "@webgpu/types": "^0.1.65",
     "typescript": "~5.8.3",
     "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "gl-matrix": "^3.4.4"
   }
 }

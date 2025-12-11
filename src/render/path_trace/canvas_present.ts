@@ -1,14 +1,14 @@
-import physim from "../physim";
+import tracer from "../tracer";
 import { createRenderPipeline } from "./pipeline";
 
 export class canvasPresenter{
     constructor(){}
 
     async initCanvasPresenter() {
-        let device = physim.get().device;
-        let textureView = physim.get().imageView;
+        let device = tracer.get().device;
+        let textureView = tracer.get().imageView;
 
-        this.pipeline = await createRenderPipeline(device, "src/shader/path_trace_display.wgsl", physim.get().preferedCanvasTextureFormat);
+        this.pipeline = await createRenderPipeline(device, "src/shader/path_trace_display.wgsl", tracer.get().preferedCanvasTextureFormat);
 
         const sampler = device.createSampler({
             magFilter: "linear",
@@ -27,8 +27,8 @@ export class canvasPresenter{
     }
 
     recordCommandBuffer() : GPUCommandBuffer {
-        let device = physim.get().device;
-        let context = physim.get().webgpuContext;
+        let device = tracer.get().device;
+        let context = tracer.get().webgpuContext;
 
         const renderEncoder = device.createCommandEncoder();
         const pass = renderEncoder.beginRenderPass({

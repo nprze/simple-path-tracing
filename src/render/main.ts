@@ -1,9 +1,8 @@
-import physim from "./physim.ts";
+import tracer from "./tracer.ts";
 
 async function runApp() {
-  await physim.create();
-  physim.get().run();
+  await tracer.create();
+  tracer.get().run();
 }
-
 
 runApp();
