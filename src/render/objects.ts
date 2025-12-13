@@ -17,18 +17,18 @@ class objs {
 
         this.addCenteredSpheres(3);
 
-        this.addPlane(vec4.fromValues(0, 1, 0, -10));
+        this.addPlane(vec4.fromValues(0, 1, 0, -5));
     }
     addCenteredSpheres(circleCount:number){
         var circle_radius = 8.0;
-        var dist = 0.0;
+        var dist = 1.0;
         var x = ((circleCount - 1) * (circle_radius)) * -0.5;
         var y = 0;
         var z = 20;
         this.circles = new Array<vec4>(circleCount); 
         for (var i = 0;i<circleCount;i++){
             this.circles[i] = vec4.fromValues(x, y, z, circle_radius);
-            x += (dist + (circle_radius * 1.6));
+            x += (dist + (circle_radius * 3));
         }
     }
     addSphere(pos_x : number, pos_y : number, pos_z : number, radius : number){

@@ -76,6 +76,33 @@ fn hit_plane(base_position:vec3<f32>, plane:vec4<f32>, ray_dir:vec3<f32>)->Hit {
     hit.did_hit = false;
     return hit;
 }
+fn hash(p: vec3<f32>) -> f32 {
+    let h = dot(p, vec3<f32>(127.1, 311.7, 74.7));
+    return fract(sin(h) * 43758.5453123);
+}
+
+fn random_in_unit_sphere(seed: vec3<f32>) -> vec3<f32> {
+    let x = hash(seed);
+    let y = hash(seed.yzx);
+    let z = hash(seed.zxy);
+    return vec3<f32>(x, y, z) * 2.0 - 1.0;
+}
+fn random_in_hemisphere(normal: vec3<f32>, seed: vec3<f32>) -> vec3<f32> {
+    let rand = random_in_unit_sphere(seed);
+    return normalize(select(-rand, rand, dot(rand, normal) > 0.0));
+}
+
+fn geometric_energy(bounce_index: i32, max_bounces: i32) -> f32 {
+    let r = 0.75;
+
+    let nf = f32(max_bounces);
+    let ifl = f32(bounce_index);
+
+    let denom = 1.0 - pow(r, nf);
+    let a = 0.98 * (1.0 - r) / denom;
+
+    return a * pow(r, ifl);
+}
 
 fn trace_ray(base_position: vec3<f32>, ray_dir: vec3<f32>) -> vec3<f32> {
     var current_pos = base_position;
@@ -89,7 +116,7 @@ fn trace_ray(base_position: vec3<f32>, ray_dir: vec3<f32>) -> vec3<f32> {
             break;
         }
         let n = max_ray_bounces - remaining_bounces;
-        let multiplier = pow(0.5, f32(n)); 
+        let multiplier = geometric_energy(n, max_ray_bounces);// pow(0.5, f32(n)); 
 
         var smallest_hit: Hit;
         smallest_hit.did_hit = false;
@@ -110,14 +137,25 @@ fn trace_ray(base_position: vec3<f32>, ray_dir: vec3<f32>) -> vec3<f32> {
         }
 
         if (!smallest_hit.did_hit) {
-            accumulated_color = accumulated_color + multiplier * vec3<f32>(ray_dir.y * -0.5 + 0.5, ray_dir.y * -0.5 + 0.5, 1.0); 
+            let dotDirUp = dot(vec3<f32>(0,-1,0), current_dir) * 0.5 + 0.5;
+            let intensity = clamp(dotDirUp, 0.0, 1.0);
+            if (remaining_bounces == max_ray_bounces){
+                accumulated_color = accumulated_color + f32(1/n) * 0.9 * vec3<f32>(intensity * 0.5 + 0.2, intensity * 0.7 + 0.2, intensity*0.5 + 0.4); 
+            }else{
+                accumulated_color = accumulated_color + multiplier * 2 * vec3<f32>(intensity, intensity, intensity); 
+            }
             break;
         }
         accumulated_color = accumulated_color + smallest_hit.color * multiplier;
 
         // reflect 
         let normal = smallest_hit.normal;
-        current_dir = normalize(current_dir - (2.0 * dot(current_dir, normal) * normal));
+        let reflected = normalize(current_dir - (2.0 * dot(current_dir, normal) * normal));
+
+        let roughness = 0.05;
+        let rand = vec3<f32>(0,0,0);//random_in_hemisphere(reflected, smallest_hit.hit_pos);
+        current_dir = normalize(reflected + roughness * rand);
+
         current_pos = smallest_hit.hit_pos + (0.01 * normal);
 
         remaining_bounces -= 1;
