@@ -136,7 +136,7 @@ class pathTracerInputData{
     constructor(texWidth:number, texHeight:number) {
         this.oneOverTexWidth = 1 / texWidth;
         this.oneOverTexHeight = 1 / texHeight;
-        this.cam = new camera(1, 0,0,-20, 0,0,1);
+        this.cam = new camera(3, 0,0,-20, 0,0,1);
     }
     create(circle_count:number, planes_count:number){
         this.data = new Float32Array(

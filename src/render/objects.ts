@@ -15,9 +15,9 @@ class objs {
         this.circles = new Array<vec4>;
         this.planes = new Array<vec4>;
 
-        this.addCenteredSpheres(3);
+        this.addCenteredSpheres(1);
 
-        this.addPlane(vec4.fromValues(0, 1, 0, -5));
+        this.addPlane(vec4.fromValues(0, -1, 0, 8));
     }
     addCenteredSpheres(circleCount:number){
         var circle_radius = 8.0;
